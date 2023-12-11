@@ -108,12 +108,16 @@ def gather_system_info():
     for profile in os.listdir(profiles_path):
         profile_path = os.path.join(profiles_path, profile)
         if os.path.isdir(profile_path) and profile not in ['Default', 'Public', 'Default User']:
-            size = sum(os.path.getsize(os.path.join(dirpath, filename)) for dirpath, dirnames, filenames in
-                       os.walk(profile_path) for filename in filenames)
-            user_profiles.append({
-                'username': profile,
-                'folder_size_gb': size // (1024 ** 3)
-            })
+            try:
+                size = sum(os.path.getsize(os.path.join(dirpath, filename)) for dirpath, dirnames, filenames in
+                           os.walk(profile_path) for filename in filenames if
+                           os.path.exists(os.path.join(dirpath, filename)))
+                user_profiles.append({
+                    'username': profile,
+                    'folder_size_gb': size // (1024 ** 3)
+                })
+            except FileNotFoundError as e:
+                print(f"Error accessing files in profile {profile}: {e}")
 
     return {
         'user': user,
