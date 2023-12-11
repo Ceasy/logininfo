@@ -26,6 +26,16 @@ def execute_command(command):
         return None
 
 
+def is_windows_activated():
+    result = execute_command('cscript //Nologo slmgr.vbs /xpr')
+    return 'activated' in result.lower() if result else 'not activated'
+
+
+def is_office_activated():
+    result = get_office_version()
+    return 'activated' if result != 'Unknown' else 'not activated'
+
+
 def get_special_folder_path(folder_name):
     key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                          r'Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders')
@@ -73,6 +83,8 @@ def gather_system_info():
     thunderbird_installed = is_installed('Thunderbird')
     windows_version = platform.version()
     office_version = get_office_version()
+    windows_activated = is_windows_activated()
+    office_activated = is_office_activated()
 
     disk_info = []
     for drive in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
@@ -108,7 +120,9 @@ def gather_system_info():
         'windows_version': windows_version,
         'office_version': office_version,
         'disk_info_json': json.dumps(disk_info),
-        'user_profiles_json': json.dumps(user_profiles)
+        'user_profiles_json': json.dumps(user_profiles),
+        'windows_activated': windows_activated,
+        'office_activated': office_activated
     }
 
 
@@ -161,6 +175,10 @@ def insert_data_into_db(data):
             now = datetime.now()
             update_time_query = "UPDATE user_info SET LastUpdated = %s WHERE UserLogin = %s"
             cursor.execute(update_time_query, (now, data['user']))
+            update_query = """
+                   UPDATE user_info SET WinActivate = %s, OfficeActivate = %s WHERE UserLogin = %s
+                   """
+            cursor.execute(update_query, (data['windows_activated'], data['office_activated'], data['user']))
 
             connection.commit()
             write_log("Data Insertion", data['user'], "Success", "Details of the operation")
