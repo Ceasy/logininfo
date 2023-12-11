@@ -28,12 +28,19 @@ def execute_command(command):
 
 def is_windows_activated():
     result = execute_command('cscript //Nologo slmgr.vbs /xpr')
-    return 'activated' in result.lower() if result else 'not activated'
+    if result is not None:
+        return 'Yes' if 'activated' in result.lower() else 'No'
+    else:
+        return 'Error'
 
 
 def is_office_activated():
     result = get_office_version()
-    return 'activated' if result != 'Unknown' else 'not activated'
+    if result != 'Unknown' and result is not None:
+        return 'Yes' if 'activated' in result.lower() else 'No'
+    else:
+        return 'Error'
+
 
 
 def get_special_folder_path(folder_name):
