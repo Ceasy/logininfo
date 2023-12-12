@@ -9,7 +9,6 @@ import mysql.connector
 
 from datetime import datetime
 
-
 db_config = {
     'host': os.environ.get('DB_HOST', 'default_host'),
     'database': os.environ.get('DB_DATABASE', 'default_database'),
@@ -26,6 +25,19 @@ def execute_command(command):
         return None
 
 
+def get_desktop_files():
+    try:
+        desktop_path = get_special_folder_path('Desktop')
+        files = [f for f in os.listdir(desktop_path)
+                 if os.path.isfile(os.path.join(desktop_path, f))
+                 and not f.endswith('.lnk')
+                 and f.lower() != 'desktop.ini']
+        return files
+    except Exception as e:
+        print(f"Ошибка при получении файлов с рабочего стола: {e}")
+        return []
+
+
 def is_windows_activated():
     result = execute_command('cscript //Nologo slmgr.vbs /xpr')
     if result is not None:
@@ -40,7 +52,6 @@ def is_office_activated():
         return 'Yes' if 'activated' in result.lower() else 'No'
     else:
         return 'Error'
-
 
 
 def get_special_folder_path(folder_name):
@@ -190,6 +201,10 @@ def insert_data_into_db(data):
                    UPDATE user_info SET WinActivate = %s, OfficeActivate = %s WHERE UserLogin = %s
                    """
             cursor.execute(update_query, (data['windows_activated'], data['office_activated'], data['user']))
+            desktop_files = get_desktop_files()
+            desktop_files_json = json.dumps(desktop_files)
+            update_desktop_files_query = "UPDATE user_info SET DesktopFiles = %s WHERE UserLogin = %s"
+            cursor.execute(update_desktop_files_query, (desktop_files_json, data['user']))
 
             connection.commit()
             write_log("Data Insertion", data['user'], "Success", "Details of the operation")
